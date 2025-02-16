@@ -10,7 +10,6 @@ import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
 )
 class ItemMetadata extends OfflineFirstWithSupabaseModel {
   @Supabase(unique: true)
-  @Sqlite(index: true, unique: true)
   final String id;
   
   // Association: foreign key 'wardrobe_item_id'

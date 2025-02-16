@@ -8,7 +8,6 @@ import 'package:brick_supabase/brick_supabase.dart';
 )
 class UserProfile extends OfflineFirstWithSupabaseModel {
   @Supabase(unique: true)
-  @Sqlite(index: true, unique: true)
   final String id;
   final String username;
   final String? displayName;

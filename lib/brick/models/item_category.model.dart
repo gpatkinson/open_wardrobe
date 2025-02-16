@@ -9,7 +9,6 @@ import 'package:uuid/uuid.dart';
 )
 class ItemCategory extends OfflineFirstWithSupabaseModel {
   @Supabase(unique: true)
-  @Sqlite(index: true, unique: true)
   final String id;
   final String name;
 

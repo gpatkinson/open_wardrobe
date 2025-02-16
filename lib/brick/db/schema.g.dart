@@ -1,22 +1,18 @@
 // GENERATED CODE DO NOT EDIT
 // This file should be version controlled
 import 'package:brick_sqlite/db.dart';
-part '20250213222641.migration.dart';
-part '20250214203603.migration.dart';
+part '20250216160740.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
-final migrations = <Migration>{
-  const Migration20250213222641(),
-  const Migration20250214203603()
-};
+final migrations = <Migration>{const Migration20250216160740()};
 
 /// A consumable database structure including the latest generated migration.
 final schema =
-    Schema(20250214203603, generatorVersion: 1, tables: <SchemaTable>{
+    Schema(20250216160740, generatorVersion: 1, tables: <SchemaTable>{
   SchemaTable('CommunityPostLike', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('post_CommunityPost_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'CommunityPost',
@@ -28,13 +24,11 @@ final schema =
         onDeleteCascade: false,
         onDeleteSetDefault: false),
     SchemaColumn('created_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('CommunityPostComment', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('post_CommunityPost_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'CommunityPost',
@@ -47,13 +41,11 @@ final schema =
         onDeleteSetDefault: false),
     SchemaColumn('comment', Column.varchar),
     SchemaColumn('created_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('UseItem', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('wardrobe_item_WardrobeItem_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'WardrobeItem',
@@ -65,9 +57,7 @@ final schema =
         foreignTableName: 'UserProfile',
         onDeleteCascade: false,
         onDeleteSetDefault: false)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('_brick_Outfit_outfit_items', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
@@ -104,7 +94,7 @@ final schema =
   SchemaTable('UserProfile', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('username', Column.varchar),
     SchemaColumn('display_name', Column.varchar),
     SchemaColumn('bio', Column.varchar),
@@ -113,13 +103,11 @@ final schema =
     SchemaColumn('is_public', Column.boolean),
     SchemaColumn('created_at', Column.datetime),
     SchemaColumn('updated_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('WardrobeItem', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('user_profile_UserProfile_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'UserProfile',
@@ -139,13 +127,11 @@ final schema =
     SchemaColumn('updated_at', Column.datetime),
     SchemaColumn('deleted_at', Column.datetime),
     SchemaColumn('image_path', Column.varchar)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('UseOutfit', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('outfit_Outfit_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'Outfit',
@@ -157,26 +143,22 @@ final schema =
         foreignTableName: 'UserProfile',
         onDeleteCascade: false,
         onDeleteSetDefault: false)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('Brand', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('name', Column.varchar),
     SchemaColumn('user_profile_UserProfile_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'UserProfile',
         onDeleteCascade: false,
         onDeleteSetDefault: false)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('OutfitItem', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('outfit_Outfit_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'Outfit',
@@ -187,13 +169,11 @@ final schema =
         foreignTableName: 'WardrobeItem',
         onDeleteCascade: false,
         onDeleteSetDefault: false)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('Lookbook', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('user_profile_UserProfile_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'UserProfile',
@@ -206,13 +186,11 @@ final schema =
     SchemaColumn('is_public', Column.boolean),
     SchemaColumn('created_at', Column.datetime),
     SchemaColumn('updated_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('ItemMetadata', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('wardrobe_item_WardrobeItem_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'WardrobeItem',
@@ -228,13 +206,11 @@ final schema =
     SchemaColumn('notes', Column.varchar),
     SchemaColumn('created_at', Column.datetime),
     SchemaColumn('updated_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('LookbookItem', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('lookbook_Lookbook_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'Lookbook',
@@ -243,21 +219,17 @@ final schema =
     SchemaColumn('item_id', Column.varchar),
     SchemaColumn('item_type', Column.varchar),
     SchemaColumn('created_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('ItemCategory', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('name', Column.varchar)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  }),
+  }, indices: <SchemaIndex>{}),
   SchemaTable('CommunityPost', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
-    SchemaColumn('id', Column.varchar, unique: true),
+    SchemaColumn('id', Column.varchar),
     SchemaColumn('user_profile_UserProfile_brick_id', Column.integer,
         isForeignKey: true,
         foreignTableName: 'UserProfile',
@@ -268,7 +240,5 @@ final schema =
     SchemaColumn('is_public', Column.boolean),
     SchemaColumn('created_at', Column.datetime),
     SchemaColumn('updated_at', Column.datetime)
-  }, indices: <SchemaIndex>{
-    SchemaIndex(columns: ['id'], unique: true)
-  })
+  }, indices: <SchemaIndex>{})
 });

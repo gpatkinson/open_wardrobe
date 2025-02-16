@@ -191,18 +191,8 @@ class UserProfileAdapter extends OfflineFirstWithSupabaseAdapter<UserProfile> {
   };
   @override
   Future<int?> primaryKeyByUniqueColumns(
-      UserProfile instance, DatabaseExecutor executor) async {
-    final results = await executor.rawQuery('''
-        SELECT * FROM `UserProfile` WHERE id = ? LIMIT 1''', [instance.id]);
-
-    // SQFlite returns [{}] when no results are found
-    if (results.isEmpty || (results.length == 1 && results.first.isEmpty)) {
-      return null;
-    }
-
-    return results.first['_brick_id'] as int;
-  }
-
+          UserProfile instance, DatabaseExecutor executor) async =>
+      instance.primaryKey;
   @override
   final String tableName = 'UserProfile';
 

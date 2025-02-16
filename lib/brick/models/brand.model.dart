@@ -10,7 +10,6 @@ import 'package:openwardrobe/brick/models/user_profile.model.dart';
 )
 class Brand extends OfflineFirstWithSupabaseModel {
   @Supabase(unique: true)
-  @Sqlite(index: true, unique: true)
   final String id;
   final String name;
 

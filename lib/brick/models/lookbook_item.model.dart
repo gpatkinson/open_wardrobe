@@ -10,7 +10,6 @@ import 'package:openwardrobe/brick/models/lookbook.model.dart';
 )
 class LookbookItem extends OfflineFirstWithSupabaseModel {
   @Supabase(unique: true)
-  @Sqlite(index: true, unique: true)
   final String id;
   
   @Supabase(foreignKey: 'lookbook_id')

@@ -11,7 +11,6 @@ import 'package:openwardrobe/brick/models/user_profile.model.dart';
 )
 class CommunityPostComment extends OfflineFirstWithSupabaseModel {
   @Supabase(unique: true)
-  @Sqlite(index: true, unique: true)
   final String id;
   
   // Association to CommunityPost via post_id

@@ -2,9 +2,9 @@ import 'package:brick_offline_first_with_supabase/brick_offline_first_with_supab
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_supabase/brick_supabase.dart';
 import 'package:openwardrobe/brick/models/outfit_item.model.dart';
+import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
 import 'package:uuid/uuid.dart';
 import 'package:openwardrobe/brick/models/user_profile.model.dart';
-
 @ConnectOfflineFirstWithSupabase(
   supabaseConfig: SupabaseSerializable(tableName: 'outfit'),
   sqliteConfig: SqliteSerializable(),
@@ -22,9 +22,8 @@ class Outfit extends OfflineFirstWithSupabaseModel {
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  @Supabase(foreignKey: 'outfit_id')
+  @Supabase(foreignKey: 'outfit_id')  
   final List<OutfitItem> outfitItems;
-  
 
   Outfit({
     String? id,

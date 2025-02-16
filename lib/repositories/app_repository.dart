@@ -1,13 +1,13 @@
-// Saved in my_app/lib/src/brick/repository.dart
 import 'package:brick_offline_first_with_supabase/brick_offline_first_with_supabase.dart';
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_sqlite/memory_cache_provider.dart';
-// This hide is for Brick's @Supabase annotation; in most cases,
-// supabase_flutter **will not** be imported in application code.
 import 'package:brick_supabase/brick_supabase.dart' hide Supabase;
 import 'package:openwardrobe/brick/db/schema.g.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:openwardrobe/brick/brick.g.dart';
 
@@ -38,6 +38,13 @@ class AppRepository extends OfflineFirstWithSupabaseRepository {
     final provider = SupabaseProvider(
       Supabase.instance.client,
       modelDictionary: supabaseModelDictionary,
+    );
+
+    final storageDirectory = await getApplicationDocumentsDirectory();
+    final storagePath = p.join(storageDirectory.path, 'hydrated_bloc');
+
+    HydratedBloc.storage = await HydratedStorage.build(
+      storageDirectory: Directory(storagePath),
     );
 
     _instance = AppRepository._(

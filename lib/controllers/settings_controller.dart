@@ -1,8 +1,10 @@
-import 'package:get_it/get_it.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openwardrobe/repositories/app_repository.dart';
 
 class SettingsController {
-  final AppRepository _appRepository = GetIt.instance<AppRepository>();
+  final AppRepository _appRepository;
+
+  SettingsController(this._appRepository);
 
   Future<Map<String, dynamic>> fetchSettings() async {
     try {

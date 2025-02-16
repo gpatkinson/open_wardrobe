@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openwardrobe/brick/models/user_profile.model.dart';
 import 'package:openwardrobe/controllers/home_controller.dart';
@@ -8,8 +8,6 @@ import 'package:openwardrobe/ui/widgets/user_profile/user_profile_component.dart
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
-
-  final HomeController homeController = GetIt.instance<HomeController>();
 
   @override
   Widget build(BuildContext context) {
@@ -26,22 +24,15 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 500),
-                  child: StreamBuilder<List<UserProfile>>(
-                    stream: homeController.fetchUserProfile(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
+                  child: BlocBuilder<HomeController, List<UserProfile>>(
+                    builder: (context, userProfile) {
+                      if (userProfile.isEmpty) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-      return Center(child: Text('Error: ${snapshot.error}'));
-    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-      return const Center(child: Text('No profile found'));
-    }
-    
-    final userProfile = snapshot.data!.first; // Assuming there is always one user profile
-
-    return UserProfileComponent(item: userProfile);
-  },
-),
+                      } else {
+                        return UserProfileComponent(item: userProfile.first);
+                      }
+                    },
+                  ),
                 ),
                 const SizedBox(height: 20),
                 ConstrainedBox(

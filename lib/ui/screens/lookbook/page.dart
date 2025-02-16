@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openwardrobe/brick/models/lookbook.model.dart';
-import 'package:get_it/get_it.dart';
 import 'package:openwardrobe/ui/widgets/lookbook/lookbook_component.dart';
 import 'package:openwardrobe/controllers/lookbook_controller.dart';
 
 class LookbookScreen extends StatelessWidget {
   LookbookScreen({super.key});
-
-  final LookbookController lookbookController = GetIt.instance<LookbookController>();
 
   @override
   Widget build(BuildContext context) {
@@ -25,25 +23,17 @@ class LookbookScreen extends StatelessWidget {
                 Expanded(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 500),
-                    child: FutureBuilder<List<Lookbook>>(
-                      future: lookbookController.fetchLookbookItems(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                    child: BlocBuilder<LookbookController, List<Lookbook>>(
+                      builder: (context, lookbookItems) {
+                        if (lookbookItems.isEmpty) {
                           return const Center(child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(
-                            child: Text('Error: ${snapshot.error}'),
-                          );
-                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Center(child: Text('No items found'));
                         } else {
-                          final items = snapshot.data!;
                           return SingleChildScrollView(
                             child: Wrap(
                               spacing: 8.0,
                               runSpacing: 8.0,
                               alignment: WrapAlignment.start,
-                              children: items.map((item) => 
+                              children: lookbookItems.map((item) => 
                                 Container(
                                   width: 150,
                                   child: LookbookComponent(item: item),

@@ -5,6 +5,7 @@ import 'package:openwardrobe/ui/screens/camera/page.dart';
 import 'package:openwardrobe/ui/screens/lookbook/page.dart';
 import 'package:openwardrobe/ui/screens/wardrobe/settings/page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../ui/screens/auth/page.dart';
 import '../ui/screens/home/page.dart';
@@ -59,7 +60,10 @@ class AppRouter {
               GoRoute(
                 path: '/',
                 name: 'Home',
-                builder: (context, state) => HomeScreen(),
+                builder: (context, state) => BlocProvider(
+                  create: (context) => HomeController(context.read<AppRepository>()),
+                  child: HomeScreen(),
+                ),
               ),
             ],
           ),
@@ -69,7 +73,10 @@ class AppRouter {
               GoRoute(
                 path: '/wardrobe',
                 name: 'Wardrobe',
-                builder: (context, state) => WardrobeScreen(),
+                builder: (context, state) => BlocProvider(
+                  create: (context) => WardrobeController(context.read<AppRepository>()),
+                  child: WardrobeScreen(),
+                ),
               ),
             ],
           ),
@@ -79,7 +86,10 @@ class AppRouter {
               GoRoute(
                 path: '/lookbook',
                 name: 'Lookbook',
-                builder: (context, state) => LookbookScreen(),
+                builder: (context, state) => BlocProvider(
+                  create: (context) => LookbookController(context.read<AppRepository>()),
+                  child: LookbookScreen(),
+                ),
               ),
             ],
           ),

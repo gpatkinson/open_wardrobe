@@ -9,7 +9,6 @@ import 'package:brick_offline_first_with_supabase/brick_offline_first_with_supab
 
 import 'package:brick_offline_first_with_supabase/brick_offline_first_with_supabase.dart';
 
-
 class OutfitRepositoryImpl implements OutfitRepository {
   final OfflineFirstWithSupabaseRepository _repository;
 
@@ -18,11 +17,7 @@ class OutfitRepositoryImpl implements OutfitRepository {
   @override
   Future<List<Outfit>> fetchOutfits() async {
     final outfits = await _repository.get<Outfit>();
-    return outfits.map((e) => Outfit(
-      id: e.id,
-      name: e.name,
-      userProfileId: e.userProfileId,
-    )).toList();
+    return outfits;
   }
 
   @override
@@ -34,4 +29,8 @@ class OutfitRepositoryImpl implements OutfitRepository {
     ));
   }
 
+  @override
+  Future<void> deleteOutfit(Outfit outfit) async {
+    await _repository.delete<Outfit>(outfit);
+  }
 }

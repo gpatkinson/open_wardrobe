@@ -31,7 +31,7 @@ class Repository extends OfflineFirstWithSupabaseRepository {
 
     await Supabase.initialize(
       url: "https://openwdsupdemo.sug.lol",
-      anonKey: "your_anon_key_here",
+      anonKey: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTczODg5ODA0MCwiZXhwIjo0ODk0NTcxNjQwLCJyb2xlIjoiYW5vbiJ9.bv0LuM7PP9JxKSrI7XTzw_I2IS7-86L8iqIkHiN-aQI",
       debug: true,
       httpClient: client,
     );

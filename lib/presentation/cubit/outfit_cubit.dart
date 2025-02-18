@@ -7,21 +7,12 @@ part 'outfit_state.dart';
 
 class OutfitCubit extends Cubit<OutfitState> {
   final OutfitRepository _repository;
-  String _currentUserProfileId = '';
 
   OutfitCubit(this._repository) : super(OutfitInitial());
 
-  /// Set user profile and reload outfits
-  void setUserProfile(String userProfileId) {
-    if (_currentUserProfileId != userProfileId) {
-      _currentUserProfileId = userProfileId;
-      fetchOutfits();
-    }
-  }
 
   /// Fetch outfits for the current user profile
   Future<void> fetchOutfits() async {
-    if (_currentUserProfileId.isEmpty) return;
 
     emit(OutfitLoading());
     try {
@@ -36,6 +27,15 @@ class OutfitCubit extends Cubit<OutfitState> {
   Future<void> addOutfit(Outfit outfit) async {
     try {
       await _repository.addOutfit(outfit);
+      fetchOutfits(); // Refresh list
+    } catch (e) {
+      emit(OutfitError("Failed to add outfit: $e"));
+    }
+  }
+
+  Future<void> deleteOutfit(Outfit outfit) async {
+    try {
+      await _repository.deleteOutfit(outfit);
       fetchOutfits(); // Refresh list
     } catch (e) {
       emit(OutfitError("Failed to add outfit: $e"));

@@ -1,0 +1,19 @@
+// lib/data/models/category.model.dart
+import 'package:brick_offline_first_with_supabase/brick_offline_first_with_supabase.dart';
+import 'package:uuid/uuid.dart';
+import 'package:brick_supabase/brick_supabase.dart';
+
+@ConnectOfflineFirstWithSupabase(
+  supabaseConfig: SupabaseSerializable(tableName: 'item_category'),
+)
+class Category extends OfflineFirstWithSupabaseModel {
+  @Supabase(unique: true)
+  final String id;
+
+  final String name;
+
+  Category({
+    String? id,
+    required this.name,
+  }) : this.id = id ?? const Uuid().v4();
+}

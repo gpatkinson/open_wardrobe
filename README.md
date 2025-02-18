@@ -1,38 +1,16 @@
-# 👕 OpenWardrobe – Open-Source Wardrobe Organizer  
-An **open-source, privacy-first** wardrobe app built with **Flutter & Supabase**. Organize your clothes, plan outfits, and get smart suggestions – all without ads or subscriptions!  
+# app
 
-![Flutter](https://img.shields.io/badge/Flutter-3.0-blue?logo=flutter)
-![Supabase](https://img.shields.io/badge/Supabase-Database-green?logo=supabase)
-![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
- 
----
+A new Flutter project.
 
-## 🚀 Features
-✅ **📸 Virtual Closet** – Upload & categorize clothes  
-✅ **🎽 Outfit Creator** – Mix & match outfits  
-✅ **📅 Outfit Planner** – Plan outfits ahead  
-✅ **🌦 Weather-Based Suggestions** – Get outfit ideas based on real-time weather  
-✅ **📊 Wardrobe Insights** – Track clothing usage & get recommendations  
-✅ **🔐 Secure & Open-Source** – No ads, no trackers, fully customizable  
+## Getting Started
 
----
+This project is a starting point for a Flutter application.
 
-## 📱 Screenshots (Coming Soon!)
-> _(Add images/gifs of the app in action)_
+A few resources to get you started if this is your first Flutter project:
 
----
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-## 🛠️ Tech Stack
-- **Frontend:** Flutter (Dart)  
-- **Backend:** Supabase (PostgreSQL, Auth, Storage)  
-- **State Management:** Provider / Riverpod (TBD)  
-- **CI/CD:** GitHub Actions  
-
----
-
-## 🎯 Getting Started  
-
-### **1️⃣ Clone the Repository**
-```sh
-git clone https://github.com/suggestied/openwardrobe.git
-cd openwardrobe
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

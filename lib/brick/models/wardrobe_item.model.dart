@@ -3,8 +3,8 @@ import 'package:brick_offline_first_with_supabase/brick_offline_first_with_supab
 import 'package:brick_sqlite/brick_sqlite.dart';
 import 'package:brick_supabase/brick_supabase.dart';
 import 'package:uuid/uuid.dart';
-import 'brand.model.dart';
-import 'category.model.dart';
+import 'package:openwardrobe/brick/models/brand.model.dart';
+import 'package:openwardrobe/brick/models/category.model.dart';
 
 @ConnectOfflineFirstWithSupabase(
   supabaseConfig: SupabaseSerializable(tableName: 'wardrobe_item'),

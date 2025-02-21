@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:openwardrobe/brick/models/outfit.model.dart';
-import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
-import 'package:openwardrobe/controllers/wardrobe_controller.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_cubit.dart';
+import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_state.dart';
 import 'package:openwardrobe/ui/widgets/outfit/outfit_component.dart';
 import 'package:openwardrobe/ui/widgets/wardrobe_item/wardrobe_item_component.dart';
 
@@ -10,71 +9,59 @@ class WardrobeScreen extends StatefulWidget {
   const WardrobeScreen({super.key});
 
   @override
-  _WardrobeScreenState createState() => _WardrobeScreenState();
+  State<WardrobeScreen> createState() => _WardrobeScreenState();
 }
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
-  final WardrobeController wardrobeController =
-      GetIt.instance<WardrobeController>();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Wardrobe')),
-      body: StreamBuilder<List<WardrobeItem>>(
-        stream: wardrobeController.fetchWardrobeItems(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: BlocBuilder<WardrobeCubit, WardrobeState>(
+        builder: (context, state) {
+          if (state is WardrobeLoading) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No items found'));
-          } else {
-            final items = snapshot.data!;
+          } else if (state is WardrobeError) {
+            return Center(child: Text('Error: ${state.message}'));
+          } else if (state is WardrobeItemsAndOutfitsLoaded) {
+            final items = state.items;
+            final outfits = state.outfits;
 
             return SingleChildScrollView(
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Column(
                   children: [
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: items
-                          .map((item) => WardrobeItemComponent(item: item))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 20),
-                    FutureBuilder<List<Outfit>>(
-                      future: wardrobeController.fetchOutfits(),
-                      builder: (context, outfitSnapshot) {
-                        if (outfitSnapshot.connectionState == ConnectionState.waiting) {
-                          // Show wardrobe items while outfits are still loading
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (outfitSnapshot.hasError) {
-                          return Center(child: Text('Error: ${outfitSnapshot.error}'));
-                        } else if (!outfitSnapshot.hasData || outfitSnapshot.data!.isEmpty) {
-                          return const Center(child: Text('No outfits found'));
-                        } else {
-                          final outfits = outfitSnapshot.data!;
-
-                          return Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: outfits
-                                .map((outfit) => OutfitComponent(item: outfit))
-                                .toList(),
-                          );
-                        }
-                      },
-                    ),
+                    if (items.isNotEmpty) ...[                        
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: items
+                            .map((item) => WardrobeItemComponent(item: item))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 20),
+                    ] else
+                      const Center(child: Text('No items found')),
+                    
+                    if (outfits.isNotEmpty)
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: outfits
+                            .map((outfit) => OutfitComponent(item: outfit))
+                            .toList(),
+                      )
+                    else
+                      const Center(child: Text('No outfits found')),
+                    
                     const SizedBox(height: 100),
                   ],
                 ),
               ),
             );
           }
+          return const SizedBox();
         },
       ),
     );

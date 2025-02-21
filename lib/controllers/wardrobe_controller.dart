@@ -7,9 +7,10 @@ import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
 class WardrobeController {
   final AppRepository _appRepository = GetIt.instance<AppRepository>();
 
-  Stream<List<WardrobeItem>> fetchWardrobeItems() {
+  Future<List<WardrobeItem>> fetchWardrobeItems() {
     try {
-      return _appRepository.subscribeToRealtime<WardrobeItem>();
+      return _appRepository.get<WardrobeItem>(
+      );
     } catch (e) {
       // Handle error
       throw Exception('Failed to fetch wardrobe items: $e');

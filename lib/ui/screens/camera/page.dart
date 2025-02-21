@@ -2,12 +2,15 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:get_it/get_it.dart';
 import 'package:openwardrobe/repositories/app_repository.dart';
 import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
+import 'package:openwardrobe/presentation/blocs/camera/camera_cubit.dart';
+import 'package:openwardrobe/presentation/blocs/camera/camera_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -20,8 +23,6 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   final AppRepository _appRepository = GetIt.instance<AppRepository>();
   final supabase = Supabase.instance.client;
-  CameraController? _controller;
-  late Future<void> _initializeControllerFuture;
   bool get isWeb => kIsWeb;
 
   List<File> _selectedImages = [];
@@ -32,16 +33,8 @@ class _CameraScreenState extends State<CameraScreen> {
   void initState() {
     super.initState();
     if (!isWeb) {
-      _initializeCamera();
+      context.read<CameraCubit>().initializeCamera();
     }
-  }
-
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) return;
-    _controller = CameraController(cameras.first, ResolutionPreset.high, enableAudio: false);
-    _initializeControllerFuture = _controller!.initialize();
-    setState(() {});
   }
 
   Future<void> _pickImage({bool fromGallery = false}) async {
@@ -176,7 +169,6 @@ Future<void> _submitImages() async {
 
   @override
   void dispose() {
-    _controller?.dispose();
     super.dispose();
   }
 

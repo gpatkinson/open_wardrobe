@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openwardrobe/repositories/app_repository.dart';
 import 'router/app_router.dart';
 
 import 'package:openwardrobe/di/service_locator.dart';
+import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_cubit.dart';
+import 'package:openwardrobe/presentation/blocs/home/home_cubit.dart';
+import 'package:openwardrobe/presentation/blocs/camera/camera_cubit.dart';
 
 // sqflite_common_ffi_web
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -28,7 +32,14 @@ Future<void> main() async {
 
   setupLocator();
 
-  runApp(const MyApp());
+  runApp(MultiBlocProvider(
+    providers: [
+      BlocProvider(create: (context) => WardrobeCubit()..fetchWardrobeItems()..fetchOutfits()),
+      BlocProvider(create: (context) => HomeCubit()),
+      BlocProvider(create: (context) => CameraCubit()),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {

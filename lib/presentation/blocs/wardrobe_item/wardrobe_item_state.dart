@@ -21,3 +21,5 @@ class WardrobeItemError extends WardrobeItemState {
 
   WardrobeItemError(this.message);
 }
+
+class WardrobeItemDeleted extends WardrobeItemState {}

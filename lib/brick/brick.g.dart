@@ -45,6 +45,7 @@ import '../brick/models/use_outfit.model.dart';
 import '../brick/models/brand.model.dart';
 import '../brick/models/outfit_item.model.dart';
 import '../brick/models/lookbook.model.dart';
+import '../brick/models/category_summary.model.dart';
 import '../brick/models/item_metadata.model.dart';
 import '../brick/models/lookbook_item.model.dart';
 import '../brick/models/item_category.model.dart';
@@ -60,6 +61,7 @@ part 'adapters/use_outfit_adapter.g.dart';
 part 'adapters/brand_adapter.g.dart';
 part 'adapters/outfit_item_adapter.g.dart';
 part 'adapters/lookbook_adapter.g.dart';
+part 'adapters/category_summary_adapter.g.dart';
 part 'adapters/item_metadata_adapter.g.dart';
 part 'adapters/lookbook_item_adapter.g.dart';
 part 'adapters/item_category_adapter.g.dart';
@@ -77,6 +79,7 @@ final Map<Type, SupabaseAdapter<SupabaseModel>> supabaseMappings = {
   Brand: BrandAdapter(),
   OutfitItem: OutfitItemAdapter(),
   Lookbook: LookbookAdapter(),
+  CategorySummary: CategorySummaryAdapter(),
   ItemMetadata: ItemMetadataAdapter(),
   LookbookItem: LookbookItemAdapter(),
   ItemCategory: ItemCategoryAdapter(),
@@ -96,6 +99,7 @@ final Map<Type, SqliteAdapter<SqliteModel>> sqliteMappings = {
   Brand: BrandAdapter(),
   OutfitItem: OutfitItemAdapter(),
   Lookbook: LookbookAdapter(),
+  CategorySummary: CategorySummaryAdapter(),
   ItemMetadata: ItemMetadataAdapter(),
   LookbookItem: LookbookItemAdapter(),
   ItemCategory: ItemCategoryAdapter(),

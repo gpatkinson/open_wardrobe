@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openwardrobe/presentation/blocs/category/category_cubit.dart';
+import 'package:openwardrobe/presentation/blocs/category/category_state.dart';
 import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_cubit.dart';
 import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_state.dart';
+import 'package:openwardrobe/ui/widgets/category/category_component.dart';
 import 'package:openwardrobe/ui/widgets/outfit/outfit_component.dart';
 import 'package:openwardrobe/ui/widgets/wardrobe_item/wardrobe_item_component.dart';
 
@@ -14,6 +17,24 @@ class WardrobeScreen extends StatefulWidget {
 }
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load categories first, then wardrobe items and outfits
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    final categoryCubit = context.read<CategoryCubit>();
+    final wardrobeCubit = context.read<WardrobeCubit>();
+    
+    await categoryCubit.loadCategories('');
+    await Future.wait([
+      wardrobeCubit.fetchWardrobeItems(),
+      wardrobeCubit.fetchOutfits(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,38 +52,113 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
             return SingleChildScrollView(
               child: Align(
                 alignment: Alignment.topCenter,
-                child: Column(
-                  children: [
-                    if (items.isNotEmpty) ...[                        
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: items
-                            .map((item) => WardrobeItemComponent(
-                                  item: item,
-                                  onTap: () => context.push(
-                                    '/wardrobe/item/${item.id}',
-                                  ),
-                                ))
-                            .toList(),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (outfits.isNotEmpty) ...[                        
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Text(
+                            'Outfits',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 200,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: outfits.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 16),
+                                child: OutfitComponent(item: outfits[index]),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ] else
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 32),
+                          child: const Center(child: Text('No outfits found')),
+                        ),
+                      BlocBuilder<CategoryCubit, CategoryState>(
+                        builder: (context, categoryState) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Categories',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (categoryState.selectedCategoryIds.isNotEmpty)
+                                      TextButton(
+                                        onPressed: () {
+                                          context.read<CategoryCubit>().clearSelection();
+                                          context.read<WardrobeCubit>().clearCategoryFilter();
+                                        },
+                                        child: const Text('Clear Filters'),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: categoryState.categories.map((category) {
+                                    final isSelected = categoryState.selectedCategoryIds.contains(category.id);
+                                    return CategoryComponent(
+                                      category: category,
+                                      isSelected: isSelected,
+                                      onTap: () {
+                                        context.read<CategoryCubit>().toggleCategory(category.id);
+                                        context.read<WardrobeCubit>().toggleCategory(category.id);
+                                        context.read<WardrobeCubit>().fetchWardrobeItems();
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 20),
-                    ] else
-                      const Center(child: Text('No items found')),
-                    
-                    if (outfits.isNotEmpty)
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: outfits
-                            .map((outfit) => OutfitComponent(item: outfit))
-                            .toList(),
-                      )
-                    else
-                      const Center(child: Text('No outfits found')),
-                    
-                    const SizedBox(height: 100),
-                  ],
+                      if (items.isNotEmpty) ...[                        
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          children: state.filterItemsByCategory(items)
+                              .map((item) => WardrobeItemComponent(
+                                    item: item,
+                                    onTap: () => context.push(
+                                      '/wardrobe/item/${item.id}',
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                        const SizedBox(height: 32),
+                      ] else
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 32),
+                          child: const Center(child: Text('No items found')),
+                        ),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
               ),
             );

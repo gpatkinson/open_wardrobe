@@ -1,14 +1,21 @@
 // GENERATED CODE DO NOT EDIT
 // This file should be version controlled
 import 'package:brick_sqlite/db.dart';
+part '20250221180926.migration.dart';
 part '20250216160740.migration.dart';
+part '20250221154502.migration.dart';
+part '20250221180912.migration.dart';
 
 /// All intelligently-generated migrations from all `@Migratable` classes on disk
-final migrations = <Migration>{const Migration20250216160740()};
+final migrations = <Migration>{
+  const Migration20250221180926(),
+  const Migration20250216160740(),
+  const Migration20250221154502(),
+  const Migration20250221180912()
+};
 
 /// A consumable database structure including the latest generated migration.
-final schema =
-    Schema(20250216160740, generatorVersion: 1, tables: <SchemaTable>{
+final schema = Schema(20250221180926, generatorVersion: 1, tables: <SchemaTable>{
   SchemaTable('CommunityPostLike', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
@@ -127,7 +134,10 @@ final schema =
     SchemaColumn('updated_at', Column.datetime),
     SchemaColumn('deleted_at', Column.datetime),
     SchemaColumn('image_path', Column.varchar)
-  }, indices: <SchemaIndex>{}),
+  }, indices: <SchemaIndex>{
+    SchemaIndex(columns: ['brand_Brand_brick_id'], unique: false),
+    SchemaIndex(columns: ['item_category_ItemCategory_brick_id'], unique: false)
+  }),
   SchemaTable('UseOutfit', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,
         autoincrement: true, nullable: false, isPrimaryKey: true),
@@ -186,6 +196,14 @@ final schema =
     SchemaColumn('is_public', Column.boolean),
     SchemaColumn('created_at', Column.datetime),
     SchemaColumn('updated_at', Column.datetime)
+  }, indices: <SchemaIndex>{}),
+  SchemaTable('CategorySummary', columns: <SchemaColumn>{
+    SchemaColumn('_brick_id', Column.integer,
+        autoincrement: true, nullable: false, isPrimaryKey: true),
+    SchemaColumn('category_id', Column.varchar),
+    SchemaColumn('category_name', Column.varchar),
+    SchemaColumn('item_count', Column.integer),
+    SchemaColumn('category_image', Column.varchar)
   }, indices: <SchemaIndex>{}),
   SchemaTable('ItemMetadata', columns: <SchemaColumn>{
     SchemaColumn('_brick_id', Column.integer,

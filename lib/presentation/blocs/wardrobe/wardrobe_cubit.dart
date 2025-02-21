@@ -8,11 +8,11 @@ import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_state.dart';
 class WardrobeCubit extends Cubit<WardrobeState> {
   final AppRepository _appRepository = GetIt.instance<AppRepository>();
 
-  WardrobeCubit() : super(WardrobeInitial());
+  WardrobeCubit() : super(const WardrobeInitial());
 
   Future<void> fetchWardrobeItems() async {
     if (state is! WardrobeLoading) {
-      emit(WardrobeLoading());
+      emit(const WardrobeLoading());
     }
     
     try {
@@ -21,15 +21,48 @@ class WardrobeCubit extends Cubit<WardrobeState> {
           ? (state as WardrobeItemsAndOutfitsLoaded).outfits
           : [];
       
-      emit(WardrobeItemsAndOutfitsLoaded(items: List<WardrobeItem>.from(items), outfits: List<Outfit>.from(currentOutfits)));
+      emit(WardrobeItemsAndOutfitsLoaded(
+        items: items,
+        outfits: List<Outfit>.from(currentOutfits),
+      ));
     } catch (e) {
       emit(WardrobeError('Failed to fetch wardrobe items: $e'));
     }
   }
 
+  void clearCategoryFilter() {
+    if (state is WardrobeItemsAndOutfitsLoaded) {
+      final currentState = state as WardrobeItemsAndOutfitsLoaded;
+      emit(WardrobeItemsAndOutfitsLoaded(
+        items: currentState.items,
+        outfits: currentState.outfits,
+        selectedCategoryIds: [],
+      ));
+    }
+  }
+
+void toggleCategory(String categoryId) {
+  if (state is WardrobeItemsAndOutfitsLoaded) {
+    final currentState = state as WardrobeItemsAndOutfitsLoaded;
+    final selectedCategories = List<String>.from(currentState.selectedCategoryIds ?? []);
+
+    if (selectedCategories.contains(categoryId)) {
+      selectedCategories.remove(categoryId);
+    } else {
+      selectedCategories.add(categoryId);
+    }
+
+    emit(WardrobeItemsAndOutfitsLoaded(
+      items: currentState.items,
+      outfits: currentState.outfits,
+      selectedCategoryIds: selectedCategories,
+    ));
+  }
+}
+
   Future<void> fetchOutfits() async {
     if (state is! WardrobeLoading) {
-      emit(WardrobeLoading());
+      emit(const WardrobeLoading());
     }
     
     try {
@@ -38,19 +71,12 @@ class WardrobeCubit extends Cubit<WardrobeState> {
           ? (state as WardrobeItemsAndOutfitsLoaded).items
           : [];
       
-      emit(WardrobeItemsAndOutfitsLoaded(items: List<WardrobeItem>.from(currentItems), outfits: outfits));
+      emit(WardrobeItemsAndOutfitsLoaded(
+        items: List<WardrobeItem>.from(currentItems),
+        outfits: outfits,
+      ));
     } catch (e) {
       emit(WardrobeError('Failed to fetch outfits: $e'));
-    }
-  }
-
-  Future<void> fetchWardrobeItemCount() async {
-    try {
-      emit(WardrobeLoading());
-      final items = await _appRepository.get<WardrobeItem>();
-      emit(WardrobeItemsLoaded(items));
-    } catch (e) {
-      emit(WardrobeError('Failed to fetch wardrobe item count: $e'));
     }
   }
 }

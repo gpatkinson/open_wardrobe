@@ -1,32 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:openwardrobe/controllers/settings_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final SettingsController settingsController = GetIt.instance<SettingsController>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: settingsController.fetchSettings(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData) {
-            return const Center(child: Text('No settings found'));
-          }
-
-          final settings = snapshot.data!;
-
-          return Padding(
+      body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,9 +47,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          )
     );
+      
   }
 }

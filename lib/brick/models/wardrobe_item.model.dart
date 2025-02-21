@@ -18,9 +18,11 @@ class WardrobeItem extends OfflineFirstWithSupabaseModel {
   final UserProfile userProfile;
   
   @Supabase(foreignKey: 'brand_id')
+  @Sqlite(nullable: true, index: true)
   final Brand? brand;
   
   @Supabase(foreignKey: 'category_id')
+  @Sqlite(nullable: true, index: true)
   final ItemCategory? itemCategory;
   
   final DateTime createdAt;

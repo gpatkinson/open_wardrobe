@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_cubit.dart';
 import 'package:openwardrobe/presentation/blocs/wardrobe/wardrobe_state.dart';
 import 'package:openwardrobe/ui/widgets/outfit/outfit_component.dart';
@@ -37,7 +38,12 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                         spacing: 10,
                         runSpacing: 10,
                         children: items
-                            .map((item) => WardrobeItemComponent(item: item))
+                            .map((item) => WardrobeItemComponent(
+                                  item: item,
+                                  onTap: () => context.push(
+                                    '/wardrobe/item/${item.id}',
+                                  ),
+                                ))
                             .toList(),
                       ),
                       const SizedBox(height: 20),

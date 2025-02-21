@@ -4,6 +4,7 @@ import 'package:openwardrobe/brick/models/lookbook.model.dart';
 import 'package:openwardrobe/ui/screens/camera/page.dart';
 import 'package:openwardrobe/ui/screens/lookbook/page.dart';
 import 'package:openwardrobe/ui/screens/wardrobe/settings/page.dart';
+import 'package:openwardrobe/ui/screens/wardrobe_item/page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../ui/screens/auth/page.dart';
@@ -11,7 +12,7 @@ import '../ui/screens/home/page.dart';
 import '../ui/screens/wardrobe/page.dart';
 import '../ui/screens/wardrobe/add/page.dart';
 import '../ui/widgets/scaffold_with_navbar.dart';
-import '../ui/screens/wardrobe/settings/account_page.dart'; // Import the new settings account page
+import '../ui/screens/wardrobe/settings/account_page.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -48,6 +49,13 @@ class AppRouter {
         path: '/settings/account',
         name: 'SettingsAccount',
         builder: (context, state) => const SettingsAccountPage(),
+      ),
+      GoRoute(
+        path: '/wardrobe/item/:id',
+        name: 'WardrobeItem',
+        builder: (context, state) => WardrobeItemPage(
+          itemId: state.pathParameters['id']!,
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

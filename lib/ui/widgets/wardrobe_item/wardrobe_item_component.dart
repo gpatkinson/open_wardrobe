@@ -10,12 +10,14 @@ class WardrobeItemComponent extends StatelessWidget {
   final WardrobeItem item;
   final bool isSelected;
   final VoidCallback? onTap;
+  final double size;
 
   const WardrobeItemComponent({
     super.key,
     required this.item,
     this.isSelected = false,
     this.onTap,
+    this.size = 110,
   });
 
   Future<String> _getSignedUrl(String? imagePath) async {
@@ -49,7 +51,6 @@ class WardrobeItemComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 110.00;
 
     return GestureDetector(
       onTap: onTap,

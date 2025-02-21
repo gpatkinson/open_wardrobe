@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'package:get_it/get_it.dart';
+import 'package:openwardrobe/repositories/app_repository.dart';
+import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -14,6 +18,8 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
+  final AppRepository _appRepository = GetIt.instance<AppRepository>();
+  final supabase = Supabase.instance.client;
   CameraController? _controller;
   late Future<void> _initializeControllerFuture;
   bool get isWeb => kIsWeb;
@@ -105,26 +111,68 @@ class _CameraScreenState extends State<CameraScreen> {
       },
     );
   }
+Future<void> _submitImages() async {
+  try {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception("User not authenticated");
 
-  Future<void> _submitImages() async {
     if (isWeb) {
       for (int i = 0; i < _selectedWebImages.length; i++) {
-        debugPrint("Uploading Web Image: ${_selectedWebNames[i]}, Size: ${_selectedWebImages[i].length} bytes");
-        // TODO: Implement upload logic for Web images (e.g., upload to Supabase)
+        final bytes = _selectedWebImages[i];
+        final fileName = _selectedWebNames[i];
+        final String path =
+            '$userId/${DateTime.now().toIso8601String()}_$fileName';
+        print("Uploading (web): $path"); // Log path
+
+        final response = await supabase.storage
+            .from('wardrobe_items')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: FileOptions(contentType: 'image/jpeg'),
+            );
+        print("Upload response (web): $response");
       }
     } else {
       for (var imageFile in _selectedImages) {
-        debugPrint("Uploading Mobile Image: ${imageFile.path}");
-        // TODO: Implement upload logic for Mobile images (e.g., upload to Supabase)
+        final fileName = imageFile.path.split('/').last;
+        final String path =
+            '$userId/${DateTime.now().toIso8601String()}_$fileName';
+        print("Uploading (mobile): $path"); // Log path
+
+        final response = await supabase.storage
+            .from('wardrobe_items')
+            .upload(
+              path,
+              imageFile,
+              fileOptions: FileOptions(contentType: 'image/jpeg'),
+            );
+        print("Upload response (mobile): $response");
       }
     }
-    // Clear images after upload
+
     setState(() {
       _selectedImages.clear();
       _selectedWebImages.clear();
       _selectedWebNames.clear();
     });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Successfully uploaded to wardrobe!')),
+      );
+
+      
+    }
+  } catch (e) {
+    print("Error uploading images: $e"); // Log error details
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error uploading images: ${e.toString()}')),
+      );
+    }
   }
+}
 
   @override
   void dispose() {

@@ -26,8 +26,8 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 500),
-                  child: StreamBuilder<List<UserProfile>>(
-                    stream: homeController.fetchUserProfile(),
+                  child: FutureBuilder<List<UserProfile>>(
+                    future: homeController.fetchUserProfile(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());

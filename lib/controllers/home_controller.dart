@@ -9,8 +9,8 @@ class HomeController {
 
 
 
-  Stream<List<UserProfile>> fetchUserProfile() {
-      final usersStream = _appRepository.subscribe<UserProfile>();
+  Future<List<UserProfile>> fetchUserProfile() {
+      final usersStream = _appRepository.get<UserProfile>();
 
       return usersStream;
     

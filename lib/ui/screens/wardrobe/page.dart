@@ -21,8 +21,8 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Wardrobe')),
-      body: FutureBuilder<List<WardrobeItem>>(
-        future: wardrobeController.fetchWardrobeItems(),
+      body: StreamBuilder<List<WardrobeItem>>(
+        stream: wardrobeController.fetchWardrobeItems(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

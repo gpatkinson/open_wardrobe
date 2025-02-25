@@ -12,6 +12,8 @@ class SettingsAccountController {
   List<File> _selectedImages = [];
   List<Uint8List> _selectedWebImages = [];
 
+  List<File> get selectedImages => _selectedImages;
+
   Future<UserProfile> fetchUserProfile() async {
     try {
       final profiles = await _appRepository.get<UserProfile>();

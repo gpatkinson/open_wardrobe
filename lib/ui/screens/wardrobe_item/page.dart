@@ -4,6 +4,9 @@ import 'package:openwardrobe/brick/models/wardrobe_item.model.dart';
 import 'package:openwardrobe/presentation/blocs/wardrobe_item/wardrobe_item_cubit.dart';
 import 'package:openwardrobe/presentation/blocs/wardrobe_item/wardrobe_item_state.dart';
 import 'package:openwardrobe/ui/widgets/wardrobe_item/wardrobe_item_component.dart';
+import 'package:collection/collection.dart';
+import 'package:openwardrobe/presentation/blocs/category/category_cubit.dart'; // Added import
+import 'package:openwardrobe/presentation/blocs/category/category_state.dart'; // Added import
 
 class WardrobeItemPage extends StatefulWidget {
   final String itemId;
@@ -45,7 +48,9 @@ class _WardrobeItemPageState extends State<WardrobeItemPage> {
                     onPressed: () {
                       if (state.isEditing) {
                         // Save changes
-                        context.read<WardrobeItemCubit>().updateWardrobeItem(state.item);
+                        context
+                            .read<WardrobeItemCubit>()
+                            .updateWardrobeItem(state.item);
                       }
                       context.read<WardrobeItemCubit>().toggleEditing();
                     },
@@ -80,8 +85,10 @@ class _WardrobeItemPageState extends State<WardrobeItemPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    if (state.isEditing) ..._buildEditingFields(context, state.item)
-                    else ..._buildViewFields(state.item),
+                    if (state.isEditing)
+                      ..._buildEditingFields(context, state.item)
+                    else
+                      ..._buildViewFields(state.item),
                   ],
                 ),
               );
@@ -106,14 +113,25 @@ class _WardrobeItemPageState extends State<WardrobeItemPage> {
         },
       ),
       const SizedBox(height: 16),
-      TextFormField(
-        initialValue: item.itemCategory?.name ?? '',
-        decoration: const InputDecoration(
-          labelText: 'Category',
-          border: OutlineInputBorder(),
-        ),
-        onChanged: (value) {
-          // TODO: Update category
+      BlocBuilder<CategoryCubit, CategoryState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const CircularProgressIndicator();
+          } else if (state.error != null) {
+            return Text('Error: ${state.error}');
+          } else {
+            return DropdownMenu<String>(
+              initialSelection: item.itemCategory?.name ?? '',
+              onSelected: (String? value) {
+                // TODO: Update category
+              },
+              dropdownMenuEntries: UnmodifiableListView<DropdownMenuEntry<String>>(
+                state.categories.map<DropdownMenuEntry<String>>(
+                  (category) => DropdownMenuEntry(value: category.name, label: category.name),
+                ),
+              ),
+            );
+          }
         },
       ),
     ];

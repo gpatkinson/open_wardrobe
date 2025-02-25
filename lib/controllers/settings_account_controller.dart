@@ -9,6 +9,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SettingsAccountController {
   final AppRepository _appRepository = GetIt.instance<AppRepository>();
 
+  final List<File> _selectedImages = [];
+  final List<Uint8List> _selectedWebImages = [];
+
   Future<UserProfile> fetchUserProfile() async {
     try {
       final profiles = await _appRepository.get<UserProfile>();

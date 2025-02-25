@@ -55,6 +55,7 @@ class SettingsAccountController {
     );
 
     if (pickedFile != null) {
+      _selectedImages.clear();
       return File(pickedFile.path);
     } else {
       return null;
@@ -68,6 +69,7 @@ class SettingsAccountController {
     );
 
     if (pickedFile != null) {
+      _selectedWebImages.clear();
       return await pickedFile.readAsBytes();
     } else {
       return null;

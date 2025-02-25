@@ -169,6 +169,7 @@ Future<void> _submitImages() async {
 
   @override
   void dispose() {
+    context.read<CameraCubit>().close();
     super.dispose();
   }
 

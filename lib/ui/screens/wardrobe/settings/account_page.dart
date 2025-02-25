@@ -25,6 +25,14 @@ class _SettingsAccountPageState extends State<SettingsAccountPage> {
   }
 
   @override
+  void dispose() {
+    _usernameController.dispose();
+    _displayNameController.dispose();
+    _bioController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

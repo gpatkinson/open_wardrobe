@@ -8,22 +8,34 @@ import 'package:collection/collection.dart';
 import 'package:openwardrobe/presentation/blocs/category/category_cubit.dart'; // Added import
 import 'package:openwardrobe/presentation/blocs/category/category_state.dart'; // Added import
 
-class WardrobeItemPage extends StatelessWidget {
+class WardrobeItemPage extends StatefulWidget {
   final String itemId;
 
   const WardrobeItemPage({super.key, required this.itemId});
 
   @override
+  _WardrobeItemPageState createState() => _WardrobeItemPageState();
+}
+
+class _WardrobeItemPageState extends State<WardrobeItemPage> {
+  late WardrobeItemCubit _wardrobeItemCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _wardrobeItemCubit = WardrobeItemCubit()..loadWardrobeItem(widget.itemId);
+  }
+
+  @override
+  void dispose() {
+    _wardrobeItemCubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) => WardrobeItemCubit()..loadWardrobeItem(itemId),
-        ),
-        BlocProvider(
-          create: (context) => CategoryCubit()..loadCategories('userId'), // Replace 'userId' with actual userId
-        ),
-      ],
+    return BlocProvider(
+      create: (context) => _wardrobeItemCubit,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Wardrobe Item'),

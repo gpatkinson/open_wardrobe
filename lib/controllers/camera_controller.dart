@@ -8,7 +8,13 @@ import 'package:openwardrobe/repositories/app_repository.dart';
 class CameraController {
   final AppRepository _appRepository = GetIt.instance<AppRepository>();
 
+  List<File> _selectedImages = [];
+  List<Uint8List> _selectedWebImages = [];
+
   Future<List<File>> pickImages({bool fromGallery = false}) async {
+    _selectedImages.clear();
+    _selectedWebImages.clear();
+
     if (kIsWeb) {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -16,6 +22,7 @@ class CameraController {
       );
 
       if (result != null && result.files.isNotEmpty) {
+        _selectedWebImages = result.files.map((file) => file.bytes!).toList();
         return result.files.map((file) => File(file.path!)).toList();
       } else {
         throw Exception('No images selected');
@@ -27,6 +34,7 @@ class CameraController {
       );
 
       if (pickedFile != null) {
+        _selectedImages = [File(pickedFile.path)];
         return [File(pickedFile.path)];
       } else {
         throw Exception('No image selected');

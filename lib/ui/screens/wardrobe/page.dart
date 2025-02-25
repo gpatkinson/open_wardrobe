@@ -36,6 +36,14 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   }
 
   @override
+  void dispose() {
+    // Dispose of any resources or controllers to prevent memory leaks
+    context.read<CategoryCubit>().close();
+    context.read<WardrobeCubit>().close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Wardrobe')),

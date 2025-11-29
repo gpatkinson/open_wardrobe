@@ -12,6 +12,8 @@ import 'models/item_category.dart';
 
 // Global PocketBase instance
 late final PocketBase pb;
+// Background removal service URL
+late final String rembgUrl;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +26,9 @@ Future<void> main() async {
 
   // Initialize PocketBase
   pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'http://127.0.0.1:8090');
+  
+  // Initialize background removal service URL
+  rembgUrl = dotenv.env['REMBG_URL'] ?? 'http://127.0.0.1:5000';
 
   // Register Hive adapters
   Hive.registerAdapter(WardrobeItemAdapter());

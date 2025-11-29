@@ -1,12 +1,13 @@
-# OpenWardrobe - PocketBase Backend
+# OpenWardrobe - Full Stack
 #
 # Usage:
-#   docker compose up -d
+#   docker compose up -d --build
 #
 # Access:
 #   App:            http://localhost:8080
 #   PocketBase API: http://localhost:8090
 #   Admin UI:       http://localhost:8090/_/
+#   Rembg API:      http://localhost:5000
 
 services:
   # PocketBase Backend (auth + database + API)
@@ -22,6 +23,20 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Background Removal Service (rembg)
+  rembg:
+    build:
+      context: ./rembg-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
 
   # Flutter Web App
   app:

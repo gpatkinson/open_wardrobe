@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/wardrobe_service.dart';
+import '../../services/background_removal_service.dart';
 import '../../repositories/wardrobe_repository.dart';
 import '../../models/wardrobe_item.dart';
 import '../../models/item_category.dart';
@@ -56,6 +57,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     final nameController = TextEditingController();
     String? selectedCategoryId;
     XFile? selectedImage;
+    bool removeBackground = true; // Default to removing background
+    Uint8List? previewBytes;
+    bool isProcessing = false;
     
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -68,7 +72,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
               children: [
                 // Image picker
                 GestureDetector(
-                  onTap: () async {
+                  onTap: isProcessing ? null : () async {
                     final image = await _imagePicker.pickImage(
                       source: ImageSource.gallery,
                       maxWidth: 800,
@@ -76,7 +80,13 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                       imageQuality: 85,
                     );
                     if (image != null) {
-                      setDialogState(() => selectedImage = image);
+                      setDialogState(() {
+                        selectedImage = image;
+                        previewBytes = null;
+                      });
+                      // Load preview
+                      final bytes = await image.readAsBytes();
+                      setDialogState(() => previewBytes = bytes);
                     }
                   },
                   child: Container(
@@ -87,32 +97,43 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey[300]!),
                     ),
-                    child: selectedImage != null
-                        ? FutureBuilder<Uint8List>(
-                            future: selectedImage!.readAsBytes(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.memory(
-                                    snapshot.data!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                );
-                              }
-                              return const Center(child: CircularProgressIndicator());
-                            },
+                    child: previewBytes != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              previewBytes!,
+                              fit: BoxFit.cover,
+                            ),
                           )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey[500]),
-                              const SizedBox(height: 8),
-                              Text('Tap to add photo', style: TextStyle(color: Colors.grey[600])),
-                            ],
-                          ),
+                        : selectedImage != null
+                            ? const Center(child: CircularProgressIndicator())
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo, size: 40, color: Colors.grey[500]),
+                                  const SizedBox(height: 8),
+                                  Text('Tap to add photo', style: TextStyle(color: Colors.grey[600])),
+                                ],
+                              ),
                   ),
                 ),
+                // Remove background toggle
+                if (selectedImage != null) ...[
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    title: const Text('Remove background', style: TextStyle(fontSize: 14)),
+                    subtitle: Text(
+                      removeBackground ? 'AI will remove the background' : 'Keep original photo',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    ),
+                    value: removeBackground,
+                    onChanged: isProcessing ? null : (value) {
+                      setDialogState(() => removeBackground = value);
+                    },
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
                 const SizedBox(height: 16),
                 TextField(
                   controller: nameController,
@@ -174,16 +195,23 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: isProcessing ? null : () {
                 if (nameController.text.trim().isNotEmpty) {
                   Navigator.pop(context, {
                     'name': nameController.text.trim(),
                     'categoryId': selectedCategoryId,
                     'image': selectedImage,
+                    'removeBackground': removeBackground,
                   });
                 }
               },
-              child: const Text('Add'),
+              child: isProcessing 
+                ? const SizedBox(
+                    width: 16, 
+                    height: 16, 
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Add'),
             ),
           ],
         ),
@@ -191,14 +219,55 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     );
 
     if (result != null) {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('Processing image...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+      
       try {
         List<int>? imageBytes;
         String? imageName;
         
         if (result['image'] != null) {
           final XFile image = result['image'];
-          imageBytes = await image.readAsBytes();
+          Uint8List bytes = await image.readAsBytes();
           imageName = image.name;
+          
+          // Remove background if enabled
+          if (result['removeBackground'] == true) {
+            try {
+              bytes = await BackgroundRemovalService.removeBackground(bytes, imageName);
+              imageName = '${imageName.split('.').first}.png'; // Change extension to PNG
+            } catch (e) {
+              // If background removal fails, use original image
+              if (mounted) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Background removal failed, using original: $e'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
+          }
+          
+          imageBytes = bytes;
         }
         
         await _service.addWardrobeItem(
@@ -209,12 +278,14 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         );
         _loadData();
         if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Added "${result['name']}"')),
           );
         }
       } catch (e) {
         if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );

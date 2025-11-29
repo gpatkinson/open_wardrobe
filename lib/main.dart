@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'router/app_router.dart';
 
 import 'models/wardrobe_item.dart';
@@ -12,14 +14,18 @@ import 'models/item_category.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables
+  // Use .env.local for local development, .env for production
+  await dotenv.load(fileName: kReleaseMode ? '.env' : '.env.local');
+
   // Initialize Hive for local storage
   await Hive.initFlutter();
 
-  // Initialize Supabase
+  // Initialize Supabase from environment variables
   await Supabase.initialize(
-    url: "https://openwdsupdemo.sug.lol",
-    anonKey: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTczODg5ODA0MCwiZXhwIjo0ODk0NTcxNjQwLCJyb2xlIjoiYW5vbiJ9.bv0LuM7PP9JxKSrI7XTzw_I2IS7-86L8iqIkHiN-aQI",
-    debug: true,
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    debug: !kReleaseMode,
   );
 
 

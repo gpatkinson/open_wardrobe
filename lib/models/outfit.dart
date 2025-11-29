@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:pocketbase/pocketbase.dart';
 
 part 'outfit.g.dart';
 
@@ -20,7 +21,7 @@ class Outfit extends HiveObject {
   final DateTime updatedAt;
 
   @HiveField(5)
-  List<String> wardrobeItemIds;  // To link wardrobe items to the outfit
+  List<String> itemIds;
 
   @HiveField(6)
   bool isSynced;
@@ -31,27 +32,41 @@ class Outfit extends HiveObject {
     required this.name,
     required this.createdAt,
     required this.updatedAt,
-    this.wardrobeItemIds = const [],
+    this.itemIds = const [],
     this.isSynced = true,
   });
+
+  factory Outfit.fromPocketBase(RecordModel record) {
+    return Outfit(
+      id: record.id,
+      userId: record.getStringValue('user'),
+      name: record.getStringValue('name'),
+      createdAt: DateTime.parse(record.created),
+      updatedAt: DateTime.parse(record.updated),
+      itemIds: List<String>.from(record.getListValue<String>('items')),
+      isSynced: true,
+    );
+  }
 
   factory Outfit.fromJson(Map<String, dynamic> json) {
     return Outfit(
       id: json['id'],
-      userId: json['user_id'],
+      userId: json['user'] ?? json['user_id'] ?? '',
       name: json['name'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      wardrobeItemIds: List<String>.from(json['wardrobe_item_ids'] ?? []),
+      createdAt: DateTime.parse(json['created'] ?? json['created_at']),
+      updatedAt: DateTime.parse(json['updated'] ?? json['updated_at']),
+      itemIds: List<String>.from(json['items'] ?? json['wardrobe_item_ids'] ?? []),
+      isSynced: json['is_synced'] ?? true,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'name': name,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-        'wardrobe_item_ids': wardrobeItemIds,
-      };
+    'id': id,
+    'user': userId,
+    'name': name,
+    'items': itemIds,
+    'created': createdAt.toIso8601String(),
+    'updated': updatedAt.toIso8601String(),
+    'is_synced': isSynced,
+  };
 }

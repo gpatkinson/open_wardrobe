@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<WardrobeItem>> _clothesFuture;
+  final _wardrobeService = WardrobeService(WardrobeRepository());
 
   @override
   void initState() {
@@ -24,8 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<List<WardrobeItem>> _getClothes() async {
-    final wardrobeService = WardrobeService(WardrobeRepository());
-    return await wardrobeService.getWardrobeItems();
+    return await _wardrobeService.getWardrobeItems();
   }
 
   void _signOut() {
@@ -37,6 +37,104 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _clothesFuture = _getClothes();
     });
+  }
+
+  Future<void> _showAddItemDialog() async {
+    final nameController = TextEditingController();
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Wardrobe Item'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Item name',
+            hintText: 'e.g., Blue Jeans, White T-Shirt',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty) {
+                Navigator.pop(context, nameController.text.trim());
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      try {
+        await _wardrobeService.addWardrobeItem(name: result);
+        _refresh();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Added "$result" to your wardrobe!')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error adding item: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteItem(WardrobeItem item) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Item'),
+        content: Text('Are you sure you want to delete "${item.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _wardrobeService.deleteWardrobeItem(item.id);
+        _refresh();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Deleted "${item.name}"')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting item: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -104,6 +202,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   title: Text(item.name),
                   subtitle: Text('Added ${_formatDate(item.createdAt)}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _deleteItem(item),
+                  ),
                 );
               },
             );
@@ -138,12 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigate to add item screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add item coming soon!')),
-          );
-        },
+        onPressed: _showAddItemDialog,
         child: const Icon(Icons.add),
       ),
     );

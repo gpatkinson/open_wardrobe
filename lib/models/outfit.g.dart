@@ -22,7 +22,7 @@ class OutfitAdapter extends TypeAdapter<Outfit> {
       name: fields[2] as String,
       createdAt: fields[3] as DateTime,
       updatedAt: fields[4] as DateTime,
-      wardrobeItemIds: (fields[5] as List).cast<String>(),
+      itemIds: (fields[5] as List).cast<String>(),
       isSynced: fields[6] as bool,
     );
   }
@@ -42,7 +42,7 @@ class OutfitAdapter extends TypeAdapter<Outfit> {
       ..writeByte(4)
       ..write(obj.updatedAt)
       ..writeByte(5)
-      ..write(obj.wardrobeItemIds)
+      ..write(obj.itemIds)
       ..writeByte(6)
       ..write(obj.isSynced);
   }

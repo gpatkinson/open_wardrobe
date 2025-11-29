@@ -20,8 +20,8 @@ class WardrobeItemAdapter extends TypeAdapter<WardrobeItem> {
       id: fields[0] as String,
       userId: fields[1] as String,
       name: fields[2] as String,
-      brandId: fields[3] as String?,
-      categoryId: fields[4] as String?,
+      categoryId: fields[3] as String?,
+      imageUrl: fields[4] as String?,
       createdAt: fields[5] as DateTime,
       updatedAt: fields[6] as DateTime,
       isSynced: fields[7] as bool,
@@ -39,9 +39,9 @@ class WardrobeItemAdapter extends TypeAdapter<WardrobeItem> {
       ..writeByte(2)
       ..write(obj.name)
       ..writeByte(3)
-      ..write(obj.brandId)
-      ..writeByte(4)
       ..write(obj.categoryId)
+      ..writeByte(4)
+      ..write(obj.imageUrl)
       ..writeByte(5)
       ..write(obj.createdAt)
       ..writeByte(6)

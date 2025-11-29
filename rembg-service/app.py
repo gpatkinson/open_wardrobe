@@ -7,8 +7,12 @@ from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 from rembg import remove
 from PIL import Image
+import pillow_heif  # Add HEIC/HEIF support
 import io
 import logging
+
+# Register HEIF/HEIC opener with Pillow
+pillow_heif.register_heif_opener()
 
 app = Flask(__name__)
 CORS(app)  # Allow cross-origin requests from the Flutter app

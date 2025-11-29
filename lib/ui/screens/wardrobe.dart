@@ -123,22 +123,47 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedCategoryId,
-                  decoration: const InputDecoration(
-                    labelText: 'Category (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('No category')),
-                    ..._categories.map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.name),
-                    )),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedCategoryId,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('No category')),
+                          ..._categories.map((c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
+                          )),
+                        ],
+                        onChanged: (value) {
+                          setDialogState(() => selectedCategoryId = value);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: () async {
+                        final newCatName = await _showQuickCategoryDialog();
+                        if (newCatName != null) {
+                          try {
+                            final newCat = await _service.addCategory(newCatName);
+                            await _loadData();
+                            setDialogState(() {
+                              selectedCategoryId = newCat.id;
+                            });
+                          } catch (e) {
+                            // ignore
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.add),
+                      tooltip: 'New category',
+                    ),
                   ],
-                  onChanged: (value) {
-                    setDialogState(() => selectedCategoryId = value);
-                  },
                 ),
               ],
             ),
@@ -196,6 +221,45 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
         }
       }
     }
+  }
+
+  Future<String?> _showQuickCategoryDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New Category'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Category name',
+            hintText: 'e.g., Tops, Shoes',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.pop(context, value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(context, controller.text.trim());
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showAddCategoryDialog() async {
@@ -349,12 +413,12 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                           ),
                         )
                       : GridView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(8),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.75,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
+                            crossAxisCount: 4,
+                            childAspectRatio: 0.8,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
                           ),
                           itemCount: _filteredItems.length,
                           itemBuilder: (context, index) {
@@ -363,54 +427,61 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             
                             return Card(
                               clipBehavior: Clip.antiAlias,
-                              elevation: 2,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: InkWell(
                                 onLongPress: () => _deleteItem(item),
+                                borderRadius: BorderRadius.circular(12),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Expanded(
                                       flex: 3,
-                                      child: Container(
-                                        color: Colors.grey[100],
-                                        child: item.imageUrl != null
-                                            ? Image.network(
-                                                item.imageUrl!,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) => Center(
-                                                  child: Icon(Icons.checkroom, size: 48, color: Colors.grey[400]),
+                                      child: ClipRRect(
+                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                        child: Container(
+                                          color: Colors.grey[100],
+                                          child: item.imageUrl != null
+                                              ? Image.network(
+                                                  item.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (_, __, ___) => Center(
+                                                    child: Icon(Icons.checkroom, size: 24, color: Colors.grey[400]),
+                                                  ),
+                                                )
+                                              : Center(
+                                                  child: Icon(Icons.checkroom, size: 24, color: Colors.grey[400]),
                                                 ),
-                                              )
-                                            : Center(
-                                                child: Icon(Icons.checkroom, size: 48, color: Colors.grey[400]),
-                                              ),
+                                        ),
                                       ),
                                     ),
-                                    Expanded(
-                                      flex: 1,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              item.name,
-                                              style: const TextStyle(fontWeight: FontWeight.bold),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                    Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            item.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 10,
                                             ),
-                                            if (category != null)
-                                              Text(
-                                                category.name,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.grey[600],
-                                                ),
-                                                maxLines: 1,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if (category != null)
+                                            Text(
+                                              category.name,
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                color: Colors.grey[600],
                                               ),
-                                          ],
-                                        ),
+                                              maxLines: 1,
+                                            ),
+                                        ],
                                       ),
                                     ),
                                   ],

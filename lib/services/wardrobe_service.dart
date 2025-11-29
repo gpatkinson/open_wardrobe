@@ -31,6 +31,7 @@ class WardrobeService {
   // Categories
   Future<List<ItemCategory>> getCategories() => _repository.fetchCategories();
   Future<ItemCategory> addCategory(String name) => _repository.addCategory(name);
+  Future<void> updateCategory(String id, String name) => _repository.updateCategory(id, name);
   Future<void> deleteCategory(String id) => _repository.deleteCategory(id);
 
   // Outfits

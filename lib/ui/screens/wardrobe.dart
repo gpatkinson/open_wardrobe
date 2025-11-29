@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import '../../services/wardrobe_service.dart';
 import '../../services/background_removal_service.dart';
 import '../../repositories/wardrobe_repository.dart';
@@ -381,6 +382,220 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     }
   }
 
+  Future<void> _editItem(WardrobeItem item) async {
+    final nameController = TextEditingController(text: item.name);
+    String? selectedCategoryId = item.categoryId;
+    XFile? selectedImage;
+    bool removeBackground = false;
+    Uint8List? previewBytes;
+    
+    // Load existing image if available
+    if (item.imageUrl != null) {
+      try {
+        final response = await http.get(Uri.parse(item.imageUrl!));
+        if (response.statusCode == 200) {
+          previewBytes = response.bodyBytes;
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+    
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Edit Wardrobe Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final image = await _imagePicker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 800,
+                      maxHeight: 800,
+                      imageQuality: 85,
+                    );
+                    if (image != null) {
+                      setDialogState(() {
+                        selectedImage = image;
+                        previewBytes = null;
+                      });
+                      final bytes = await image.readAsBytes();
+                      setDialogState(() => previewBytes = bytes);
+                    }
+                  },
+                  child: Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: previewBytes != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              previewBytes!,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey[500]),
+                              const SizedBox(height: 8),
+                              Text('Tap to change photo', style: TextStyle(color: Colors.grey[600])),
+                            ],
+                          ),
+                  ),
+                ),
+                if (selectedImage != null) ...[
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    title: const Text('Remove background', style: TextStyle(fontSize: 14)),
+                    value: removeBackground,
+                    onChanged: (value) {
+                      setDialogState(() => removeBackground = value);
+                    },
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Item name',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedCategoryId,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('No category')),
+                          ..._categories.map((c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
+                          )),
+                        ],
+                        onChanged: (value) {
+                          setDialogState(() => selectedCategoryId = value);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: () async {
+                        final newCatName = await _showQuickCategoryDialog();
+                        if (newCatName != null) {
+                          try {
+                            final newCat = await _service.addCategory(newCatName);
+                            await _loadData();
+                            setDialogState(() {
+                              selectedCategoryId = newCat.id;
+                            });
+                          } catch (e) {
+                            // ignore
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.add),
+                      tooltip: 'New category',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (nameController.text.trim().isNotEmpty) {
+                  Navigator.pop(context, {
+                    'name': nameController.text.trim(),
+                    'categoryId': selectedCategoryId,
+                    'image': selectedImage,
+                    'removeBackground': removeBackground,
+                  });
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null) {
+      try {
+        // If new image provided, delete and recreate with new image
+        if (result['image'] != null) {
+          // Delete old item
+          await _service.deleteWardrobeItem(item.id);
+          
+          // Process new image
+          final XFile image = result['image'];
+          Uint8List bytes = await image.readAsBytes();
+          String imageName = image.name;
+          
+          if (result['removeBackground'] == true) {
+            try {
+              bytes = await BackgroundRemovalService.removeBackground(bytes, imageName);
+              imageName = '${imageName.split('.').first}.png';
+            } catch (e) {
+              // Use original if background removal fails
+            }
+          }
+          
+          // Create new item with updated data
+          await _service.addWardrobeItem(
+            name: result['name'],
+            categoryId: result['categoryId'],
+            imageBytes: bytes,
+            imageName: imageName,
+          );
+        } else {
+          // Just update name and category
+          await _service.updateWardrobeItem(
+            item.id,
+            name: result['name'],
+            categoryId: result['categoryId'],
+          );
+        }
+        
+        _loadData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Item updated')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _deleteItem(WardrobeItem item) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -404,6 +619,60 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
     if (confirm == true) {
       await _service.deleteWardrobeItem(item.id);
       _loadData();
+    }
+  }
+
+  Future<void> _editCategory(ItemCategory category) async {
+    final controller = TextEditingController(text: category.name);
+    
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Category'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Category name',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.pop(context, value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(context, controller.text.trim());
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName != null && newName != category.name) {
+      try {
+        // Note: PocketBase doesn't have a direct update for categories in our current setup
+        // We'll need to add that to the repository
+        await _service.updateCategory(category.id, newName);
+        _loadData();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 
@@ -455,6 +724,9 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             onSelected: (_) {
                               setState(() => _selectedCategoryId = category.id);
                             },
+                            deleteIcon: Icon(Icons.edit, size: 14),
+                            onDeleted: () => _editCategory(category),
+                            showCheckmark: false,
                           ),
                         )),
                       ],
@@ -502,61 +774,109 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: InkWell(
-                                onLongPress: () => _deleteItem(item),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: ClipRRect(
-                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                        child: Container(
-                                          color: Colors.grey[100],
-                                          child: item.imageUrl != null
-                                              ? Image.network(
-                                                  item.imageUrl!,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) => Center(
-                                                    child: Icon(Icons.checkroom, size: 24, color: Colors.grey[400]),
-                                                  ),
-                                                )
-                                              : Center(
-                                                  child: Icon(Icons.checkroom, size: 24, color: Colors.grey[400]),
-                                                ),
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(4),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            item.name,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 10,
+                              child: Stack(
+                                children: [
+                                  InkWell(
+                                    onTap: () => _editItem(item),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          flex: 3,
+                                          child: ClipRRect(
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                            child: Container(
+                                              color: Colors.grey[100],
+                                              child: item.imageUrl != null
+                                                  ? Image.network(
+                                                      item.imageUrl!,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (_, __, ___) => Center(
+                                                        child: Icon(Icons.checkroom, size: 24, color: Colors.grey[400]),
+                                                      ),
+                                                    )
+                                                  : Center(
+                                                      child: Icon(Icons.checkroom, size: 24, color: Colors.grey[400]),
+                                                    ),
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          if (category != null)
-                                            Text(
-                                              category.name,
-                                              style: TextStyle(
-                                                fontSize: 8,
-                                                color: Colors.grey[600],
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(4),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                item.name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 10,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              maxLines: 1,
-                                            ),
-                                        ],
-                                      ),
+                                              if (category != null)
+                                                Text(
+                                                  category.name,
+                                                  style: TextStyle(
+                                                    fontSize: 8,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                  maxLines: 1,
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: PopupMenuButton<String>(
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.9),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(Icons.more_vert, size: 14, color: Colors.grey[700]),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      onSelected: (value) {
+                                        if (value == 'edit') {
+                                          _editItem(item);
+                                        } else if (value == 'delete') {
+                                          _deleteItem(item);
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.edit, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Edit'),
+                                            ],
+                                          ),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                              SizedBox(width: 8),
+                                              Text('Delete', style: TextStyle(color: Colors.red)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           },

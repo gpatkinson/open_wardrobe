@@ -112,6 +112,12 @@ class WardrobeRepository {
     return ItemCategory.fromPocketBase(record);
   }
 
+  Future<void> updateCategory(String id, String name) async {
+    await pb.collection('categories').update(id, body: {
+      'name': name,
+    });
+  }
+
   Future<void> deleteCategory(String id) async {
     await pb.collection('categories').delete(id);
   }

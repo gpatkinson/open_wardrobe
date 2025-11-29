@@ -16,6 +16,7 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
   List<Outfit> _outfits = [];
   List<WardrobeItem> _allItems = [];
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -24,7 +25,10 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final outfits = await _service.getOutfits();
       final items = await _service.getWardrobeItems();
@@ -34,12 +38,10 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
     }
   }
 
@@ -61,9 +63,10 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
           title: const Text('Create Outfit'),
           content: SizedBox(
             width: double.maxFinite,
-            height: 400,
+            height: 450,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
                   controller: nameController,
@@ -74,44 +77,93 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Select items:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Select items (${selectedItemIds.length} selected)',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
                     itemCount: _allItems.length,
                     itemBuilder: (context, index) {
                       final item = _allItems[index];
                       final isSelected = selectedItemIds.contains(item.id);
-                      return CheckboxListTile(
-                        title: Text(item.name),
-                        value: isSelected,
-                        onChanged: (checked) {
+                      return GestureDetector(
+                        onTap: () {
                           setDialogState(() {
-                            if (checked == true) {
-                              selectedItemIds.add(item.id);
-                            } else {
+                            if (isSelected) {
                               selectedItemIds.remove(item.id);
+                            } else {
+                              selectedItemIds.add(item.id);
                             }
                           });
                         },
-                        secondary: CircleAvatar(
-                          backgroundImage: item.imageUrl != null 
-                              ? NetworkImage(item.imageUrl!) 
-                              : null,
-                          child: item.imageUrl == null 
-                              ? const Icon(Icons.checkroom) 
-                              : null,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
+                              width: isSelected ? 3 : 1,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                item.imageUrl != null
+                                    ? Image.network(
+                                        item.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.checkroom),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey[200],
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(Icons.checkroom, size: 24),
+                                            Text(
+                                              item.name,
+                                              style: const TextStyle(fontSize: 9),
+                                              textAlign: TextAlign.center,
+                                              maxLines: 2,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                if (isSelected)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).primaryColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       );
                     },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    '${selectedItemIds.length} items selected',
-                    style: TextStyle(color: Colors.grey[600]),
                   ),
                 ),
               ],
@@ -124,11 +176,21 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
             ),
             FilledButton(
               onPressed: () {
-                if (nameController.text.trim().isNotEmpty && selectedItemIds.isNotEmpty) {
+                if (selectedItemIds.isNotEmpty && nameController.text.trim().isNotEmpty) {
                   Navigator.pop(context, {
                     'name': nameController.text.trim(),
                     'itemIds': selectedItemIds.toList(),
                   });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        nameController.text.trim().isEmpty 
+                          ? 'Please enter an outfit name' 
+                          : 'Please select at least one item'
+                      ),
+                    ),
+                  );
                 }
               },
               child: const Text('Create'),
@@ -181,8 +243,16 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
     );
 
     if (confirm == true) {
-      await _service.deleteOutfit(outfit.id);
-      _loadData();
+      try {
+        await _service.deleteOutfit(outfit.id);
+        _loadData();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 
@@ -204,113 +274,169 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _outfits.isEmpty
+          : _error != null
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.style, size: 64, color: Colors.grey[400]),
+                      Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
                       const SizedBox(height: 16),
-                      Text(
-                        'No outfits yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                      ),
+                      Text('Error loading outfits', style: TextStyle(color: Colors.grey[600])),
                       const SizedBox(height: 8),
-                      Text(
-                        'Create your first outfit!',
-                        style: TextStyle(color: Colors.grey[500]),
-                      ),
+                      ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
                     ],
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _outfits.length,
-                  itemBuilder: (context, index) {
-                    final outfit = _outfits[index];
-                    final items = _getOutfitItems(outfit);
-                    
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: InkWell(
-                        onLongPress: () => _deleteOutfit(outfit),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      outfit.name,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    onPressed: () => _deleteOutfit(outfit),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                height: 80,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: items.length,
-                                  itemBuilder: (context, i) {
-                                    final item = items[i];
-                                    return Container(
-                                      width: 70,
-                                      margin: const EdgeInsets.only(right: 8),
-                                      child: Column(
-                                        children: [
-                                          CircleAvatar(
-                                            radius: 25,
-                                            backgroundImage: item.imageUrl != null
-                                                ? NetworkImage(item.imageUrl!)
-                                                : null,
-                                            child: item.imageUrl == null
-                                                ? const Icon(Icons.checkroom)
-                                                : null,
+              : _outfits.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.style, size: 64, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No outfits yet',
+                            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Combine wardrobe items into outfits!',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(12),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.75,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemCount: _outfits.length,
+                      itemBuilder: (context, index) {
+                        final outfit = _outfits[index];
+                        final items = _getOutfitItems(outfit);
+                        
+                        return Card(
+                          clipBehavior: Clip.antiAlias,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 2,
+                          child: InkWell(
+                            onLongPress: () => _deleteOutfit(outfit),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Items grid preview
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    color: Colors.grey[100],
+                                    child: items.isEmpty
+                                        ? Center(
+                                            child: Icon(Icons.style, size: 40, color: Colors.grey[400]),
+                                          )
+                                        : GridView.builder(
+                                            physics: const NeverScrollableScrollPhysics(),
+                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: items.length == 1 ? 1 : 2,
+                                              crossAxisSpacing: 4,
+                                              mainAxisSpacing: 4,
+                                            ),
+                                            itemCount: items.length > 4 ? 4 : items.length,
+                                            itemBuilder: (context, i) {
+                                              final item = items[i];
+                                              return ClipRRect(
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Container(
+                                                  color: Colors.grey[200],
+                                                  child: item.imageUrl != null
+                                                      ? Image.network(
+                                                          item.imageUrl!,
+                                                          fit: BoxFit.cover,
+                                                          errorBuilder: (_, __, ___) => const Icon(Icons.checkroom),
+                                                        )
+                                                      : Center(
+                                                          child: Text(
+                                                            item.name,
+                                                            style: const TextStyle(fontSize: 8),
+                                                            textAlign: TextAlign.center,
+                                                            maxLines: 2,
+                                                          ),
+                                                        ),
+                                                ),
+                                              );
+                                            },
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            item.name,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontSize: 11),
-                                            textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                // Outfit name and info
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              outfit.name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              '${items.length} item${items.length == 1 ? '' : 's'}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        icon: Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
+                                        padding: EdgeInsets.zero,
+                                        onSelected: (value) {
+                                          if (value == 'delete') {
+                                            _deleteOutfit(outfit);
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                                SizedBox(width: 8),
+                                                Text('Delete', style: TextStyle(color: Colors.red)),
+                                              ],
+                                            ),
                                           ),
                                         ],
                                       ),
-                                    );
-                                  },
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${items.length} items',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton(
+                        );
+                      },
+                    ),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateOutfitDialog,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('New Outfit'),
       ),
     );
   }
 }
-

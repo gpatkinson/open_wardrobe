@@ -10,8 +10,20 @@ class WardrobeService {
     return await wardrobeRepository.fetchItems();
   }
 
-  Future<void> addWardrobeItem(WardrobeItem item) async {
-    await wardrobeRepository.addItem(item);
+  Future<WardrobeItem> addWardrobeItem({
+    required String name,
+    String? brandId,
+    String? categoryId,
+  }) async {
+    return await wardrobeRepository.addItem(
+      name: name,
+      brandId: brandId,
+      categoryId: categoryId,
+    );
+  }
+
+  Future<void> deleteWardrobeItem(String id) async {
+    await wardrobeRepository.deleteItem(id);
   }
 
   Future<void> syncWardrobe() async {

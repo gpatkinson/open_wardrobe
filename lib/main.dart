@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'router/app_router.dart';
 
 import 'models/wardrobe_item.dart';
@@ -10,26 +10,23 @@ import 'models/outfit.dart';
 import 'models/brand.dart';
 import 'models/item_category.dart';
 
+// Global PocketBase instance
+late final PocketBase pb;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load environment variables
-  // Use .env.local for local development, .env for production
   await dotenv.load(fileName: kReleaseMode ? '.env' : '.env.local');
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
 
-  // Initialize Supabase from environment variables
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-    debug: !kReleaseMode,
-  );
+  // Initialize PocketBase
+  pb = PocketBase(dotenv.env['POCKETBASE_URL'] ?? 'http://127.0.0.1:8090');
 
-
-   Hive.registerAdapter(WardrobeItemAdapter());
+  // Register Hive adapters
+  Hive.registerAdapter(WardrobeItemAdapter());
   Hive.registerAdapter(OutfitAdapter());
   Hive.registerAdapter(BrandAdapter());
   Hive.registerAdapter(ItemCategoryAdapter());
@@ -46,11 +43,10 @@ class MyApp extends StatelessWidget {
       title: 'OpenWardrobe',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,  // Enable Material 3 (modern UI)
+        useMaterial3: true,
       ),
-      darkTheme: ThemeData.dark(),  // Support dark mode
-      themeMode: ThemeMode.system,  // Automatically switch theme
-
+      darkTheme: ThemeData.dark(),
+      themeMode: ThemeMode.system,
       routerConfig: AppRouter.router,
     );
   }

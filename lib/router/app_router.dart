@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../main.dart';
 import '../ui/screens/home_page.dart';
 import '../ui/screens/auth_page.dart';  
 import '../ui/widgets/tab_scaffold.dart';
@@ -12,8 +12,7 @@ class AppRouter {
     
     // Handle redirection based on auth status
     redirect: (BuildContext context, GoRouterState state) {
-      final session = Supabase.instance.client.auth.currentSession;
-      final isLoggedIn = session != null;
+      final isLoggedIn = pb.authStore.isValid;
       final isLoggingIn = state.uri.toString() == '/auth';
 
       if (!isLoggedIn && !isLoggingIn) {
@@ -30,7 +29,7 @@ class AppRouter {
       GoRoute(
         path: '/auth',
         name: 'Auth',
-        pageBuilder: (context, state) => NoTransitionPage(child: AuthScreen()),
+        pageBuilder: (context, state) => const NoTransitionPage(child: AuthScreen()),
       ),
 
       // Protected Routes (require authentication)
@@ -42,9 +41,8 @@ class AppRouter {
           GoRoute(
             path: '/home',
             name: 'Home',
-            pageBuilder: (context, state) => NoTransitionPage(child: HomeScreen()),
+            pageBuilder: (context, state) => const NoTransitionPage(child: HomeScreen()),
           ),
-        //   We still need to wardrobe, analytics, and settings routes, and subroutes
         ],
       ),
     ],

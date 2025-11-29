@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:pocketbase/pocketbase.dart';
 
 part 'wardrobe_item.g.dart'; 
 
@@ -26,7 +27,7 @@ class WardrobeItem extends HiveObject {
   final DateTime updatedAt;
 
   @HiveField(7)
-  bool isSynced;  // For tracking sync status with Supabase
+  bool isSynced;
 
   WardrobeItem({
     required this.id,
@@ -39,27 +40,43 @@ class WardrobeItem extends HiveObject {
     this.isSynced = true,
   });
 
-  // From Supabase JSON
-  factory WardrobeItem.fromJson(Map<String, dynamic> json) {
+  // From PocketBase record
+  factory WardrobeItem.fromPocketBase(RecordModel record) {
     return WardrobeItem(
-      id: json['id'],
-      userId: json['user_id'],
-      name: json['name'],
-      brandId: json['brand_id'],
-      categoryId: json['category_id'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: record.id,
+      userId: record.getStringValue('user'),
+      name: record.getStringValue('name'),
+      brandId: record.getStringValue('brand').isEmpty ? null : record.getStringValue('brand'),
+      categoryId: record.getStringValue('category').isEmpty ? null : record.getStringValue('category'),
+      createdAt: DateTime.parse(record.created),
+      updatedAt: DateTime.parse(record.updated),
+      isSynced: true,
     );
   }
 
-  // To Supabase JSON
+  // From JSON (for local storage compatibility)
+  factory WardrobeItem.fromJson(Map<String, dynamic> json) {
+    return WardrobeItem(
+      id: json['id'],
+      userId: json['user'] ?? json['user_id'] ?? '',
+      name: json['name'],
+      brandId: json['brand'] ?? json['brand_id'],
+      categoryId: json['category'] ?? json['category_id'],
+      createdAt: DateTime.parse(json['created'] ?? json['created_at']),
+      updatedAt: DateTime.parse(json['updated'] ?? json['updated_at']),
+      isSynced: json['is_synced'] ?? true,
+    );
+  }
+
+  // To JSON
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'name': name,
-        'brand_id': brandId,
-        'category_id': categoryId,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'user': userId,
+    'name': name,
+    'brand': brandId,
+    'category': categoryId,
+    'created': createdAt.toIso8601String(),
+    'updated': updatedAt.toIso8601String(),
+    'is_synced': isSynced,
+  };
 }

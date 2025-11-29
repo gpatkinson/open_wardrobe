@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/wardrobe_service.dart';
 import '../../repositories/wardrobe_repository.dart';
 import '../../models/wardrobe_item.dart';
@@ -13,6 +15,7 @@ class WardrobeScreen extends StatefulWidget {
 
 class _WardrobeScreenState extends State<WardrobeScreen> {
   final _service = WardrobeService(WardrobeRepository());
+  final _imagePicker = ImagePicker();
   List<WardrobeItem> _items = [];
   List<ItemCategory> _categories = [];
   String? _selectedCategoryId;
@@ -52,42 +55,93 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
   Future<void> _showAddItemDialog() async {
     final nameController = TextEditingController();
     String? selectedCategoryId;
+    XFile? selectedImage;
     
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           title: const Text('Add Wardrobe Item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item name',
-                  border: OutlineInputBorder(),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Image picker
+                GestureDetector(
+                  onTap: () async {
+                    final image = await _imagePicker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 800,
+                      maxHeight: 800,
+                      imageQuality: 85,
+                    );
+                    if (image != null) {
+                      setDialogState(() => selectedImage = image);
+                    }
+                  },
+                  child: Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: selectedImage != null
+                        ? FutureBuilder<Uint8List>(
+                            future: selectedImage!.readAsBytes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.memory(
+                                    snapshot.data!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                );
+                              }
+                              return const Center(child: CircularProgressIndicator());
+                            },
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo, size: 40, color: Colors.grey[500]),
+                              const SizedBox(height: 8),
+                              Text('Tap to add photo', style: TextStyle(color: Colors.grey[600])),
+                            ],
+                          ),
+                  ),
                 ),
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedCategoryId,
-                decoration: const InputDecoration(
-                  labelText: 'Category (optional)',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Item name',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
                 ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('No category')),
-                  ..._categories.map((c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Text(c.name),
-                  )),
-                ],
-                onChanged: (value) {
-                  setDialogState(() => selectedCategoryId = value);
-                },
-              ),
-            ],
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedCategoryId,
+                  decoration: const InputDecoration(
+                    labelText: 'Category (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('No category')),
+                    ..._categories.map((c) => DropdownMenuItem(
+                      value: c.id,
+                      child: Text(c.name),
+                    )),
+                  ],
+                  onChanged: (value) {
+                    setDialogState(() => selectedCategoryId = value);
+                  },
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -100,6 +154,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                   Navigator.pop(context, {
                     'name': nameController.text.trim(),
                     'categoryId': selectedCategoryId,
+                    'image': selectedImage,
                   });
                 }
               },
@@ -112,9 +167,20 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
 
     if (result != null) {
       try {
+        List<int>? imageBytes;
+        String? imageName;
+        
+        if (result['image'] != null) {
+          final XFile image = result['image'];
+          imageBytes = await image.readAsBytes();
+          imageName = image.name;
+        }
+        
         await _service.addWardrobeItem(
           name: result['name'],
           categoryId: result['categoryId'],
+          imageBytes: imageBytes,
+          imageName: imageName,
         );
         _loadData();
         if (mounted) {
@@ -274,6 +340,11 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                                     : 'No items yet',
                                 style: TextStyle(color: Colors.grey[600]),
                               ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tap + to add your first item',
+                                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                              ),
                             ],
                           ),
                         )
@@ -281,7 +352,7 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                           padding: const EdgeInsets.all(16),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 0.85,
+                            childAspectRatio: 0.75,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
                           ),
@@ -292,44 +363,54 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                             
                             return Card(
                               clipBehavior: Clip.antiAlias,
+                              elevation: 2,
                               child: InkWell(
                                 onLongPress: () => _deleteItem(item),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     Expanded(
+                                      flex: 3,
                                       child: Container(
-                                        color: Colors.grey[200],
+                                        color: Colors.grey[100],
                                         child: item.imageUrl != null
                                             ? Image.network(
                                                 item.imageUrl!,
                                                 fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) => 
-                                                  const Icon(Icons.checkroom, size: 48),
+                                                errorBuilder: (_, __, ___) => Center(
+                                                  child: Icon(Icons.checkroom, size: 48, color: Colors.grey[400]),
+                                                ),
                                               )
-                                            : const Icon(Icons.checkroom, size: 48),
+                                            : Center(
+                                                child: Icon(Icons.checkroom, size: 48, color: Colors.grey[400]),
+                                              ),
                                       ),
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item.name,
-                                            style: const TextStyle(fontWeight: FontWeight.bold),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (category != null)
+                                    Expanded(
+                                      flex: 1,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
                                             Text(
-                                              category.name,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
-                                              ),
+                                              item.name,
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                        ],
+                                            if (category != null)
+                                              Text(
+                                                category.name,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey[600],
+                                                ),
+                                                maxLines: 1,
+                                              ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -341,11 +422,11 @@ class _WardrobeScreenState extends State<WardrobeScreen> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddItemDialog,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Item'),
       ),
     );
   }
 }
-

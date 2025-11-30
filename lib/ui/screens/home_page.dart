@@ -228,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tap + to add your first item',
+                    'Go to the Wardrobe tab to add items',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[500],
                     ),
@@ -238,10 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddItemDialog,
-        child: const Icon(Icons.add),
       ),
     );
   }

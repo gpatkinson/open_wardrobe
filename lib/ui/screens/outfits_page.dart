@@ -331,44 +331,72 @@ class _OutfitsScreenState extends State<OutfitsScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                // Items grid preview
+                                // Items canvas - compact layout
                                 Expanded(
                                   child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    color: Colors.grey[100],
+                                    padding: const EdgeInsets.all(4),
+                                    color: Colors.grey[50],
                                     child: items.isEmpty
                                         ? Center(
                                             child: Icon(Icons.style, size: 40, color: Colors.grey[400]),
                                           )
-                                        : GridView.builder(
-                                            physics: const NeverScrollableScrollPhysics(),
-                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: items.length == 1 ? 1 : 2,
-                                              crossAxisSpacing: 4,
-                                              mainAxisSpacing: 4,
-                                            ),
-                                            itemCount: items.length > 4 ? 4 : items.length,
-                                            itemBuilder: (context, i) {
-                                              final item = items[i];
-                                              return ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: Container(
-                                                  color: Colors.grey[200],
-                                                  child: item.imageUrl != null
-                                                      ? Image.network(
-                                                          item.imageUrl!,
-                                                          fit: BoxFit.cover,
-                                                          errorBuilder: (_, __, ___) => const Icon(Icons.checkroom),
-                                                        )
-                                                      : Center(
-                                                          child: Text(
-                                                            item.name,
-                                                            style: const TextStyle(fontSize: 8),
-                                                            textAlign: TextAlign.center,
-                                                            maxLines: 2,
+                                        : LayoutBuilder(
+                                            builder: (context, constraints) {
+                                              final maxWidth = constraints.maxWidth;
+                                              final maxHeight = constraints.maxHeight;
+                                              
+                                              // Always use 2-column grid with 35% overlap (both horizontal and vertical)
+                                              const cols = 2;
+                                              final rows = (items.length / cols).ceil();
+                                              const overlapPercent = 0.35; // 35% overlap
+                                              
+                                              // Calculate item size accounting for 35% overlap
+                                              // For 2 columns: maxWidth = 2*itemSize - overlapPercent*itemSize
+                                              // maxWidth = itemSize * (2 - overlapPercent)
+                                              // itemSize = maxWidth / (2 - overlapPercent)
+                                              
+                                              // For rows: maxHeight = rows*itemSize - (rows-1)*overlapPercent*itemSize
+                                              // maxHeight = itemSize * (rows - (rows-1)*overlapPercent)
+                                              
+                                              final itemWidth = maxWidth / (cols - (cols - 1) * overlapPercent);
+                                              final itemHeight = maxHeight / (rows - (rows - 1) * overlapPercent);
+                                              final itemSize = itemWidth < itemHeight ? itemWidth : itemHeight;
+                                              
+                                              // Calculate actual overlap in pixels (35% of item size)
+                                              // This overlap applies to both horizontal (spacing) and vertical (runSpacing)
+                                              final overlap = -(itemSize * overlapPercent);
+                                              
+                                              // 2-column grid layout with 35% overlap in both directions
+                                              return Wrap(
+                                                alignment: WrapAlignment.start,
+                                                spacing: overlap,      // Horizontal overlap between items in a row
+                                                runSpacing: overlap,   // Vertical overlap between rows
+                                                children: items.map((item) {
+                                                  return Container(
+                                                    width: itemSize,
+                                                    height: itemSize,
+                                                    child: item.imageUrl != null
+                                                        ? Image.network(
+                                                            item.imageUrl!,
+                                                            fit: BoxFit.contain, // Use contain to show full item with transparent background
+                                                            errorBuilder: (_, __, ___) => Container(
+                                                              color: Colors.grey[200],
+                                                              child: const Icon(Icons.checkroom, size: 16),
+                                                            ),
+                                                          )
+                                                        : Container(
+                                                            color: Colors.grey[200],
+                                                            child: Center(
+                                                              child: Text(
+                                                                item.name,
+                                                                style: const TextStyle(fontSize: 7),
+                                                                textAlign: TextAlign.center,
+                                                                maxLines: 2,
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
-                                                ),
+                                                  );
+                                                }).toList(),
                                               );
                                             },
                                           ),

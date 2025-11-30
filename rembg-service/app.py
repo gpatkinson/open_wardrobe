@@ -55,6 +55,13 @@ def remove_background():
         # Remove background
         output_image = remove(input_image)
         
+        # Crop to actual content (remove transparent padding)
+        # Get bounding box of non-transparent pixels
+        bbox = output_image.getbbox()
+        if bbox:
+            # Crop to bounding box
+            output_image = output_image.crop(bbox)
+        
         # Save to bytes
         img_byte_arr = io.BytesIO()
         output_image.save(img_byte_arr, format='PNG', optimize=True)
